@@ -9,19 +9,12 @@ headers = {'User-Agent': 'CommanderSearch/0.0.1',
            'Accept': 'application/json'
 }
 
-@app.route('/api/time')
-def get_current_time():
-    return {'time': time.time()}
-
 @app.route("/api/getCard")
 def get_card():
     r = requests.get("https://api.scryfall.com/cards/random", headers=headers)
     if r.status_code == 200:
         print("Card data fetched successfully")
-        #card_data = r.json()
-        #return render_template('card.html', card=card_data)
         data = r.json()
-        #print(data)
         return jsonify(data)
     return jsonify({'error': 'Failed to fetch card data'}), r.status_code
 
@@ -83,6 +76,18 @@ def search_cards():
                 else:
                     effects = term['value']
                     q+= "+artist%3A" + effects
+            elif term['type'] == 'Rarity':
+                q+="rarity%3A"
+                match term['value']:
+                    case "Common":
+                        q+="c"
+                    case "Uncommon":
+                        q+="u"
+                    case "Rare":
+                        q+="r"
+                    case "Mythic":
+                        q+="m"
+    print(q)
     r = requests.get("https://api.scryfall.com/cards/random" + q, headers=headers)
     if r.status_code == 200:
         print("Card data fetched successfully")

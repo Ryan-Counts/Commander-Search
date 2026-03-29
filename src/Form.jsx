@@ -64,7 +64,7 @@ const rarities = [
 
 const Form = (props) => {
     const [colors, setColors] = useState(ColorList.sort((a, b) => a.order - b.order))
-    const [searchTerms, setSearchTerms] = useState([{type: 'Oracle Text', value: ''}])
+    const [searchTerms, setSearchTerms] = useState([])
     const [searchType, setSearchType] = useState('')
     //const [currentSearchFlag, setCurrentSearchFlag] = useState(false);
     const [card, setCard] = useState(0);
@@ -88,8 +88,10 @@ const Form = (props) => {
     }
 
     const addFields=(index)=>{
-        const newField = {type: searchType, value: ''};
-        setSearchTerms([...searchTerms, newField])
+        if(searchType != "-1" && searchType != ""){
+            const newField = {type: searchType, value: ''};
+            setSearchTerms([...searchTerms, newField])
+        }
     }
 
     const removeFields=(index)=>{
@@ -150,7 +152,7 @@ const Form = (props) => {
                 <div>&nbsp;</div>
                 <div>Add Search Criteria!</div>
                 <select value={searchType} onChange={(e) => setSearchType(e.target.value)}>
-                    <option value="">Select Search Type</option>
+                    <option value="-1">Select Search Type</option>
                     {searchTypes.map((type, index) => (
                         <option key={index} value={type.type}>
                             {type.type}

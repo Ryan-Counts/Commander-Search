@@ -42,27 +42,7 @@ function App() {
   }
 ];
 
-
-  /*const search = useEffect(() => {
-    const selectedColors = data.filter((d) => d.checked).map((d) => d.name);
-    console.log(selectedColors);
-    fetch('/api/search', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ colors: selectedColors.join(',') }),
-    })
-    .then(res => res.json())
-    .then(data => {
-      console.log(data);
-      setCurrentCard(data);
-    });
-
-  });*/
-
   return (
-
     <>
       <section id="header">
         <h1>Commander Search</h1>
@@ -75,6 +55,7 @@ function App() {
       </section>
       <section id="center">
         <p>The current card is {currentCard.name}.</p>
+        <div>The link to the current card is <a href={currentCard.scryfall_uri}> here</a>.</div>
         <img src={currentCard.image_uris?.normal} alt={currentCard.name} />
       </section>
 
