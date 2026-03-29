@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ card.name }}</title>
+</head>
+<body>
+    <h1>{{ card.name }}</h1>
+    <p><strong>Type:</strong> {{ card.type_line }}</p>
+    <p><strong>Mana Cost:</strong> {{ card.mana_cost }}</p>
+    
+    <!-- Display the card image using the image_uris object -->
+    {% if card.image_uris %}
+        <img src="{{ card.image_uris.normal }}" alt="{{ card.name }}" style="width:300px;">
+    {% else %}
+        <p>No image available for this card.</p>
+    {% endif %}
+
+    <hr>
+    <p><em>{{ card.oracle_text }}</em></p>
+    <p>Price (USD): ${{ card.prices.usd }}</p>
+</body>
+</html>
