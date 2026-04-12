@@ -9,8 +9,10 @@ function App() {
   
   //const [count, setCount] = useState(0);
   const [currentCard, setCurrentCard] = useState(0);
+  const [cardFaces, setCardFaces] = useState(0);
   //const [searchTerm, setSearchTerm] = useState(0);
   const [colors, setColors] = useState('')
+  const [prevCards, setPrevCards] = useState([]);
 
   useEffect(() => {
     fetch('/api/getCard').then(res => res.json()).then(data => {
@@ -51,6 +53,8 @@ function App() {
         <Form 
           colors={colors}
           setCurrentCard={setCurrentCard}
+          setPrevCards={setPrevCards}
+          prevCards={prevCards}
         />
       </section>
       <section id="center">

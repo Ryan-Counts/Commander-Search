@@ -69,10 +69,15 @@ const Form = (props) => {
     //const [currentSearchFlag, setCurrentSearchFlag] = useState(false);
     const [card, setCard] = useState(0);
     //const [body, setBody] = useState('')
+    const [prevCards, setPrevCards] = useState([]);
+
 
     const search = () =>{
       APIService.search({colors}, {searchTerms})
-      .then((response) => props.setCurrentCard(response))
+      .then((response) => 
+        props.setCurrentCard(response),
+        setPrevCards([...prevCards, response])
+    )
       .catch(error => console.log('error',error))
     }
 

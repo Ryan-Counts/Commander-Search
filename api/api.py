@@ -9,6 +9,10 @@ headers = {'User-Agent': 'CommanderSearch/0.0.1',
            'Accept': 'application/json'
 }
 
+@app.route('/')
+def index():
+    return app.send_static_file('index.html')
+
 @app.route("/api/getCard")
 def get_card():
     r = requests.get("https://api.scryfall.com/cards/random", headers=headers)
