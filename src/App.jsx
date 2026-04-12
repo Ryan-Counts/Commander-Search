@@ -60,7 +60,15 @@ function App() {
       <section id="center">
         <p>The current card is {currentCard.name}.</p>
         <div>The link to the current card is <a href={currentCard.scryfall_uri}> here</a>.</div>
-        <img src={currentCard.image_uris?.normal} alt={currentCard.name} />
+          {currentCard.card_faces ? (
+            <div>
+              {currentCard.card_faces.map((face, index) => (
+                <img key={index} src={face.image_uris?.normal} alt={face.name} />
+              ))}
+            </div>
+          ) : (
+            <img src={currentCard.image_uris?.png} alt={currentCard.name} />
+          )}
       </section>
 
       <div className="ticks"></div>
