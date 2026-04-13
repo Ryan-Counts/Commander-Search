@@ -3,29 +3,6 @@ import APIService from './APIService.jsx'
 import Checkbox from './Checkbox.jsx'
 
 
-const ColorList = [
-  { 
-    order: 0,
-    name: 'White',
-  },
-  { 
-    order: 1,
-    name: 'Blue',
-  },
-  { 
-    order: 2,
-    name: 'Black',
-  },
-  { 
-    order: 3,
-    name: 'Red',
-  },
-  { 
-    order: 4,
-    name: 'Green',
-  }
-];
-
 const searchTypes = [
     {
         type: 'CMC'
@@ -62,21 +39,15 @@ const rarities = [
     }
 ];
 
-const Form = (props) => {
-    const [colors, setColors] = useState(ColorList.sort((a, b) => a.order - b.order))
+const Form = ({colors, newCard, ColorList}) => {
     const [searchTerms, setSearchTerms] = useState([])
     const [searchType, setSearchType] = useState('')
-    //const [currentSearchFlag, setCurrentSearchFlag] = useState(false);
     const [card, setCard] = useState(0);
-    //const [body, setBody] = useState('')
-    const [prevCards, setPrevCards] = useState([]);
-
 
     const search = () =>{
       APIService.search({colors}, {searchTerms})
       .then((response) => 
-        props.setCurrentCard(response),
-        setPrevCards([...prevCards, response])
+        newCard(response)
     )
       .catch(error => console.log('error',error))
     }
@@ -99,13 +70,14 @@ const Form = (props) => {
         }
     }
 
+    const handleColorChange=(event)=>{
+        colors[event].checked = !colors[event].checked;
+    }
+
     const removeFields=(index)=>{
         const data = [...searchTerms];
         data.splice(index, 1);
         setSearchTerms(data);
-        /*if(searchTerms.length == 0){
-            setCurrentSearchFlag(false);
-        }*/
     }
 
     return (
@@ -116,7 +88,11 @@ const Form = (props) => {
                         <tbody class="colors">
                             <tr key={index}>
                                 <td>
-                                    <Checkbox obj={obj}/>
+                                    <Checkbox 
+                                        obj={obj}
+                                        index={index}
+                                        onChange={event => handleColorChange(index, event)}
+                                    />
                                 </td>
                             </tr>
                         </tbody>

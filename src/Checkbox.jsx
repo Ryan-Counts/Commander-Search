@@ -1,9 +1,8 @@
-const Checkbox = ({obj}) => {
+const Checkbox = ({obj, index, onChange}) => {
 
-  const onChange = (event) => {
+  const handleOnChange = (event) => {
     event.preventDefault();
-    obj.checked = !obj.checked;
-    obj.name = obj.name;
+    onChange(index, event);
   }
 
   return (

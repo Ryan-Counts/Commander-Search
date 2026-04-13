@@ -1,27 +1,12 @@
-import { useState, useEffect, useMemo } from 'react'
+ import { useState, useEffect, useMemo } from 'react'
 import APIService from './APIService.jsx'
 
-import Form from './Form.jsx'
 import './App.css'
+import Form from './Form.jsx'
+import CardDisplay from './CardDispaly.jsx';
+import PrevCards from './PrevCards.jsx';
 
-
-function App() {
-  
-  //const [count, setCount] = useState(0);
-  const [currentCard, setCurrentCard] = useState(0);
-  const [cardFaces, setCardFaces] = useState(0);
-  //const [searchTerm, setSearchTerm] = useState(0);
-  const [colors, setColors] = useState('')
-  const [prevCards, setPrevCards] = useState([]);
-
-  useEffect(() => {
-    fetch('/api/getCard').then(res => res.json()).then(data => {
-      setCurrentCard(data);
-    });
-  }, []);
-
-
-  const ColorList = [
+const ColorList = [
   { 
     order: 0,
     name: 'White',
@@ -44,6 +29,29 @@ function App() {
   }
 ];
 
+
+function App() {
+
+  const [currentCard, setCurrentCard] = useState(0);
+  const [cardFaces, setCardFaces] = useState(0);
+  const [colors, setColors] = useState(ColorList.sort((a, b) => a.order - b.order))
+  const [prevCards, setPrevCards] = useState([]);
+
+  useEffect(() => {
+    fetch('/api/getCard').then(res => res.json()).then(data => {
+      setCurrentCard(data);
+    });
+  }, []);
+
+  const newCard = (card) => {
+    setCurrentCard(card);
+    setPrevCards([...prevCards, card]);
+  };
+
+  const removePrevCard = (targetCard) => {
+    setPrevCards(prev => prev.filter(card => card.name !== targetCard.name));
+  };
+
   return (
     <>
       <section id="header">
@@ -52,23 +60,22 @@ function App() {
       <section id="search">
         <Form 
           colors={colors}
-          setCurrentCard={setCurrentCard}
-          setPrevCards={setPrevCards}
-          prevCards={prevCards}
+          newCard={newCard}
+          ColorList={ColorList}
         />
       </section>
       <section id="center">
         <p>The current card is {currentCard.name}.</p>
         <div>The link to the current card is <a href={currentCard.scryfall_uri}> here</a>.</div>
-          {currentCard.card_faces ? (
-            <div>
-              {currentCard.card_faces.map((face, index) => (
-                <img key={index} src={face.image_uris?.normal} alt={face.name} />
-              ))}
-            </div>
-          ) : (
-            <img src={currentCard.image_uris?.png} alt={currentCard.name} />
-          )}
+        <CardDisplay
+          currentCard={currentCard}
+        />
+        <h4>Previous Cards:</h4>
+        <PrevCards
+          prevCards={prevCards}
+          removePrevCard={removePrevCard}
+        />
+
       </section>
 
       <div className="ticks"></div>
