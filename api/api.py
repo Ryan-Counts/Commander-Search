@@ -29,6 +29,7 @@ def search_cards():
     colors = request.json['colors']
     searchTerms = request.json['searchTerms']
     effects = []
+    idType = ''
     print(searchTerms)
         
     for color in colors['colors']:
@@ -47,7 +48,17 @@ def search_cards():
 
     q="?q=is%3Acommander+legal%3Acommander+%28game%3Apaper%29"
     if selected_colors != []:
-        q += "+id%3D" + ''.join(selected_colors)
+        for term in searchTerms['searchTerms']:
+            if term['type'] == 'ID Type':
+                idType = term['value']
+        if idType == '=':
+            q += "+id%3D" + ''.join(selected_colors)
+        elif idType == '<':
+            q += "+id%3C" + ''.join(selected_colors)
+        elif idType == '>':
+            q += "+id%3E" + ''.join(selected_colors)
+        else:
+            q += "+id%3D" + ''.join(selected_colors)
     if searchTerms != []:
         for term in searchTerms['searchTerms']:
             if term['type'] == 'Oracle Text':
@@ -62,6 +73,16 @@ def search_cards():
                     if '+' in effects:
                         effects = effects.replace('+', '%2B')
                     q+= "+o%3A" + effects
+            elif term['type'] == 'Type Line':
+                if ' ' in term['value']:
+                    effects = term['value'].split()
+                    for effect in effects:
+                        if ' ' in effect:
+                            effect = effect.replace(' ', '+')
+                        q+= "+t%3A" + effect
+                else:
+                    effects = term['value']
+                    q+= "+t%3A" + effects
             elif term['type'] == 'CMC':
                 q+= "+cmc%3D" + term['value']
             elif term['type'] == 'Power':

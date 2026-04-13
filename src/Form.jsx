@@ -21,6 +21,12 @@ const searchTypes = [
     },
     {
         type: 'Rarity'
+    },
+    {
+        type: 'Type Line'
+    },
+    {
+        type: 'ID Type'
     }
 ];
 
@@ -40,6 +46,7 @@ const rarities = [
 ];
 
 const Form = ({colors, newCard, ColorList}) => {
+
     const [searchTerms, setSearchTerms] = useState([])
     const [searchType, setSearchType] = useState('')
     const [card, setCard] = useState(0);
@@ -80,18 +87,52 @@ const Form = ({colors, newCard, ColorList}) => {
         setSearchTerms(data);
     }
 
+    const renderField = (searchTerm, index) => {
+        if (searchTerm.type === 'Rarity') {
+            return (
+                <select value={searchTerm.value} onChange={event => handleFormChange(index, event)}>
+                    <option value="">Select Rarity</option>
+                    {rarities.map((rarity, rIdx) => (
+                        <option key={rIdx} value={rarity.type}>
+                            {rarity.type}
+                        </option>
+                    ))}
+                </select>
+            );
+        }
+
+        if (searchTerm.type === 'ID Type') {
+            return (
+                <select value={searchTerm.value} onChange={event => handleFormChange(index, event)}>
+                    <option value="=">Equals</option>
+                    <option value=">">Greater Than</option>
+                    <option value="<">Less Than</option>
+                </select>
+            );
+        }
+
+        return (
+            <input
+                type="text"
+                name={searchTerm.type}
+                value={searchTerm.value}
+                onChange={event => handleFormChange(index, event)}
+            />
+        );
+    };
+
     return (
         <div>
             <form onSubmit={handleSearch} >
                 <table align="center">
                     {colors.map((obj, index) => (
-                        <tbody class="colors">
-                            <tr key={index}>
+                        <tbody className="colors" key={index}>
+                            <tr>
                                 <td>
                                     <Checkbox 
                                         obj={obj}
                                         index={index}
-                                        onChange={event => handleColorChange(index, event)}
+                                        onChange={() => handleColorChange(index)}
                                     />
                                 </td>
                             </tr>
@@ -100,28 +141,13 @@ const Form = ({colors, newCard, ColorList}) => {
                 </table>
                 <table align="center">
                     { searchTerms.length > 0 && searchTerms.map((searchTerm, index) => (
-                        <tbody class="searches">
-                            <tr key={index}>
+                        <tbody className="searches" key={index}>
+                            <tr>
                                 <td>
                                     {searchTerm.type}<span>: </span>
                                 </td>
                                 <td>
-                                    {searchTerm.type != 'Rarity' ? (
-                                        <input
-                                            type="text"
-                                            name={searchTerm.type}
-                                            value={searchTerm.value}
-                                            onChange={event => handleFormChange(index, event)}/>) 
-                                        : (
-                                            <select value={searchTerm.value} onChange={event => handleFormChange(index, event)}>
-                                                <option value="">Select Rarity</option>
-                                                {rarities.map((rarity, index) => (
-                                                    <option key={index} value={rarity.type}>
-                                                        {rarity.type}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                    )}
+                                    {renderField(searchTerm, index)}
                                 </td>
                                 <td>
                                     <button type="button" onClick={() => removeFields(index)}>Remove</button>
@@ -141,7 +167,7 @@ const Form = ({colors, newCard, ColorList}) => {
                     ))}
                 </select>
 
-                <button type="button" onClick={() => addFields(searchType.index)}>
+                <button type="button" onClick={() => addFields()}>
                     Add Search Term
                 </button>
                 <div></div>
