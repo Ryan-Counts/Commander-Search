@@ -83,10 +83,16 @@ const UBSets = [
         "Teenage Mutant Ninja Turtles Eternal": "tmc"
     },
     {
+        "Teenage Mutant Ninja Turtles Source Material": "pza"
+    },
+    {
         "Avatar: The Last Airbender": "tla"
     },
     {
         "Avatar: The Last Airbender Eternal": "tle"
+    },
+    {
+        "Avatar: The Last Airbender Promos": "ptla"
     },
     {
         "Marvel's Spiderman": "spm"
@@ -95,7 +101,13 @@ const UBSets = [
         "Marvel's Spiderman Eternal": "spe"
     },
     {
+        "Marvel's Spiderman Promos": "pspm"
+    }
+    {
         "Marvel Universe": "mar"
+    },
+    {
+        "Marvel Legends Series Inserts": "lmar"
     },
     {
         "Final Fantasy": "fin"
