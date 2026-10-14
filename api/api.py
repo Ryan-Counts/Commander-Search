@@ -575,6 +575,8 @@ def search_cards():
                         q+="r"
                     case "Mythic":
                         q+="m"
+            elif term['type'] == 'Set':
+                q+="set%3A" + term['value']
     print(q)
     r = requests.get("https://api.scryfall.com/cards/random" + q, headers=headers)
     time.sleep(0.1)  # Scryfall asks for 50-100ms between requests
