@@ -3,7 +3,7 @@ import APIService from './APIService.jsx'
 
 import './App.css'
 import Form from './Form.jsx'
-import CardDisplay from './CardDispaly.jsx';
+import CardDisplay from './CardDisplay.jsx';
 import PrevCards from './PrevCards.jsx';
 
 const ColorList = [
