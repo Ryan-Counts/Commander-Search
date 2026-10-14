@@ -1,8 +1,12 @@
-import time
+
+import os
 import requests
 import json
+import time
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, send_from_directory, request
+
+DIST = os.path.join(os.path.dirname(__file__), "..", "dist")
 
 app = Flask(__name__)
 headers = {'User-Agent': 'CommanderSearch/0.0.1', 
@@ -462,9 +466,15 @@ allSets = {
     'Legends': 'leg'
 }
 
-@app.route('/')
-def index():
-    return app.send_static_file('index.html')
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path and os.path.exists(os.path.join(DIST, path)):
+        return send_from_directory(DIST, path)
+    return send_from_directory(DIST, 'index.html')
+
+#def index():
+    #return app.send_static_file('index.html')
 
 @app.route("/api/getCard")
 def get_card():
@@ -567,6 +577,7 @@ def search_cards():
                         q+="m"
     print(q)
     r = requests.get("https://api.scryfall.com/cards/random" + q, headers=headers)
+    time.sleep(0.1)  # Scryfall asks for 50-100ms between requests
     if r.status_code == 200:
         print("Card data fetched successfully")
         #card_data = r.json()
