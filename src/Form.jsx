@@ -102,7 +102,7 @@ const UBSets = [
     },
     {
         "Marvel's Spiderman Promos": "pspm"
-    }
+    },
     {
         "Marvel Universe": "mar"
     },
