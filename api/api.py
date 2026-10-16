@@ -600,7 +600,8 @@ def search_cards():
             # While CMC is usually a single value, we cannot assume that, so we will process each CMC term individually, and group them together with an "or" operator.
             # It will likely be easier to check if the CMC term is a single value, and if so, we can just add it to the query without grouping it.
             if len(cmcs) == 1:
-                # Unfortunately, some users will put multiple terms into one instance of the search box, so we have to check if the CMC term is a single value or multiple values.
+                # Unfortunately, some users will put multiple terms into one instance of the search box, 
+                # so we have to check if the CMC term is a single value or multiple values.
                 # If it's a single value, we can just add it to the query without grouping it.
                 if ' ' in cmcs[0]['value']:
                     cmcs = cmcs[0]['value'].split()
@@ -612,53 +613,109 @@ def search_cards():
                             q+= '%20or%20'
                 else:
                     q+= "+cmc%3D" + cmcs[0]['value']
-            # Otherwise, we have to process each CMC term individually, and group them together with an "or" operator.
+            # Otherwise, we have to process each CMC term individually, and group them together with an "or" operator, starting with a parenthesis.
             else:
-                q+="+%28cmc%3D"
-
-
-                
-            elif term['type'] == 'Type Line':
-                if ' ' in term['value']:
-                    effects = term['value'].split()
-                    for effect in effects:
-                        if ' ' in effect:
-                            effect = effect.replace(' ', '+')
-                        q+= "+t%3A" + effect
+                q+="+%28"
+                for cmc in cmcs:
+                    # Check if the user has entered multiple terms into one instance of the search box, 
+                    # and if so, split them up and group them together with an "or" operator.
+                    if ' ' in cmc['value']:
+                        cmc = cmc['value'].split()
+                        for i, cmc in enumerate(cmcs):
+                            if ' ' in cmc:
+                                cmc = cmc.replace(' ', '+')    
+                            q+= "+cmc%3A" + cmc
+                            if i < len(cmcs) - 1:
+                                q+= '%20or%20'
+                    # Otherwise, we can just add the CMC term to the query without grouping it.
+                    else:
+                        q+= "+cmc%3D" + cmc['value']
+                # Close the parenthesis for the CMC grouping.
+                q+= "%29"
+        # Next, we process the Power terms.
+        if powers != []:
+            # Power is like CMC, in that it is usually a single value, but we cannot assume that, so we will process each Power term individually, 
+            # and group them together with an "or" operator.
+            if len(powers) == 1:
+                if ' ' in powers[0]['value']:
+                    powers = powers[0]['value'].split()
+                    for i, power in enumerate(powers):
+                        if ' ' in power:
+                            power = power.replace(' ', '+')    
+                        q+= "+pow%3A" + power
+                        if i < len(powers) - 1:
+                            q+= '%20or%20'
                 else:
-                    effects = term['value']
-                    q+= "+t%3A" + effects
-            elif term['type'] == 'CMC':
-                q+= "+cmc%3D" + term['value']
-            elif term['type'] == 'Power':
-                q+= "+pow%3D" + term['value']
-            elif term['type'] == 'Toughness':
-                q+= "+tou%3D" + term['value']
-            elif term['type'] == 'Artist':
-                if ' ' in term['value']:
-                    effects = term['value'].split()
-                    q+= '+artist%3A"'
-                    for effect in effects:
-                        if ' ' in effect:
-                            effect = effect.replace(' ', '+')
-                        q+= effect
-                    q+= '"'
+                    q+= "+pow%3D" + powers[0]['value']
+            else:
+                q+="+%28"
+                for power in powers:
+                    if ' ' in power['value']:
+                        power = power['value'].split()
+                        for i, power in enumerate(powers):
+                            if ' ' in power:
+                                power = power.replace(' ', '+')    
+                            q+= "+pow%3A" + power
+                            if i < len(powers) - 1:
+                                q+= '%20or%20'
+                    else:
+                        q+= "+pow%3D" + power['value']
+                q+= "%29"
+        # Next, we process the Toughness terms.
+        if toughnesses != []:
+            # Toughness is almost identical to Power, in that it is usually a single value, but we cannot assume that, so we will process each Toughness term individually,
+            # and group them together with an "or" operator.
+            if len(toughnesses) == 1:
+                if ' ' in toughnesses[0]['value']:
+                    toughnesses = toughnesses[0]['value'].split()
+                    for i, toughness in enumerate(toughnesses):
+                        if ' ' in toughness:
+                            toughness = toughness.replace(' ', '+')    
+                        q+= "+tou%3A" + toughness
+                        if i < len(toughnesses) - 1:
+                            q+= '%20or%20'
                 else:
-                    effects = term['value']
-                    q+= "+artist%3A" + effects
-            elif term['type'] == 'Rarity':
-                q+="rarity%3A"
-                match term['value']:
-                    case "Common":
-                        q+="c"
-                    case "Uncommon":
-                        q+="u"
-                    case "Rare":
-                        q+="r"
-                    case "Mythic":
-                        q+="m"
-            elif term['type'] == 'Set':
-                q+="set%3A" + term['value']
+                    q+= "+tou%3D" + toughnesses[0]['value']
+            else:
+                q+="+%28"
+                for toughness in toughnesses:
+                    if ' ' in toughness['value']:
+                        toughness = toughness['value'].split()
+                        for i, toughness in enumerate(toughnesses):
+                            if ' ' in toughness:
+                                toughness = toughness.replace(' ', '+')    
+                            q+= "+tou%3A" + toughness
+                            if i < len(toughnesses) - 1:
+                                q+= '%20or%20'
+                    else:
+                        q+= "+tou%3D" + toughness['value']
+                q+= "%29"
+        # Next, we process the Artist terms.
+        if artists != []:
+            # With the updated artist search functionality, we're guarenteed to only have
+            # a single artist per entry, which makes life much easier. 
+            # Start by changing spaces into plus symbols.
+            q+="%28"
+            for i, artist in enumerate(artists):
+                if ' ' in artist:
+                    artist = artist.replace(' ', '+')
+                q+="+a%3A" + artist
+            q+="%29"               
+            
+            
+        elif term['type'] == 'Rarity':
+            q+="rarity%3A"
+            match term['value']:
+                case "Common":
+                    q+="c"
+                case "Uncommon":
+                    q+="u"
+                case "Rare":
+                    q+="r"
+                case "Mythic":
+                    q+="m"
+        elif term['type'] == 'Set':
+            q+="set%3A" + term['value']
     print(q)
     r = requests.get("https://api.scryfall.com/cards/random" + q, headers=headers)
     time.sleep(0.1)  # Scryfall asks for 50-100ms between requests

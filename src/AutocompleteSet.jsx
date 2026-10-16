@@ -1500,19 +1500,3 @@ export default function AutocompleteSet({ onChange }) {
         </div>
     );
 }
-
-
-/*
-<div>
-    <select value={searchTerm.value} onChange={event => handleFormChange(index, event)}>
-        <option value="">Select Set</option>
-        {(UBFlag ? allSets : nonUBSets).map((set, sIdx) => (
-            <option key={Object.values(set)[0]} value={Object.values(set)[0]}>
-                {Object.keys(set)[0]}
-            </option>
-        ))}
-    </select>
-    <label>Include UB?</label>
-    <input type="checkbox" checked={UBFlag} onChange={() => setUBFlag(!UBFlag)} />
-</div>
-*/

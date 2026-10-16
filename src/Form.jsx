@@ -1,8 +1,7 @@
 import React,{ useState } from 'react';
 import APIService from './APIService.jsx'
-import Checkbox from './Checkbox.jsx'
 import AutocompleteSet from './AutocompleteSet.jsx'
-//import AutocompleteArtist from '.AutocompleteArtist.jsx'
+import AutocompleteArtist from './AutocompleteArtist.jsx'
 
 
 const searchTypes = [
@@ -160,6 +159,15 @@ const Form = ({colors, newCard, ColorList}) => {
         if (searchTerm.type === 'Set') {
             return (
                 <AutocompleteSet 
+                    index={index}
+                    onChange={event => handleFormChange(index, event)}
+                />
+            );
+        }
+
+        if (searchTerm.type === 'Artist') {
+            return (
+                <AutocompleteArtist 
                     index={index}
                     onChange={event => handleFormChange(index, event)}
                 />
