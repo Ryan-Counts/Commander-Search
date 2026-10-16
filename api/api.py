@@ -478,7 +478,7 @@ def serve(path):
 
 @app.route("/api/getCard")
 def get_card():
-    r = requests.get("https://api.scryfall.com/cards/random?q=is%3Acommander+legal%3Acommander+%28game%3Apaper", headers=headers)
+    r = requests.get("https://api.scryfall.com/cards/random?q=is%3Acommander+legal%3Acommander+game%3Apaper", headers=headers)
     if r.status_code == 200:
         print("Card data fetched successfully")
         data = r.json()
@@ -493,6 +493,14 @@ def search_cards():
     searchTerms = request.json['searchTerms']
     effects = []
     idType = ''
+    oracleTexts = []
+    typeLines = []
+    cmcs = []
+    powers = []
+    toughnesses = []
+    artists = []
+    rarities = []
+    sets = []
     print(searchTerms)
         
     for color in colors['colors']:
@@ -509,7 +517,7 @@ def search_cards():
             elif color['name'] == 'Green':
                 selected_colors.append('G')
 
-    q="?q=is%3Acommander+legal%3Acommander+%28game%3Apaper%29"
+    q="?q=is%3Acommander+legal%3Acommander+game%3Apaper"
 
     # Add color identity to query
     if selected_colors != []:
@@ -526,37 +534,39 @@ def search_cards():
             q += "+id%3D" + ''.join(selected_colors)
 
     # Add main search terms to query
-    if searchTerms != []:
+    if searchTerms['searchTerms']:
         
         # First, sort the search terms by type, so that we can process them in a specific order
-        sortedTerms = dict(sorted(searchTerms.items()))
+        #sortedTerms = dict(sorted(searchTerms.items()))
+
+        #print(sortedTerms)
 
         # Loop through the sorted search terms and seperate them by type, so that we can process them in a specific order.
-        for term in sortedTerms['searchTerms']:
-
+        for term in searchTerms.values():
+            #print(term)
             # First, evaluate the oracle text terms.
-            if term['type'] == 'Oracle Text':
+            if term[0]['type'] == 'Oracle Text':
                 oracleTexts += term
             # Next, evaluate the type line terms.
-            elif term['type'] == 'Type Line':
+            elif term[0]['type'] == 'Type Line':
                 typeLines += term
             # Next, evaluate the CMC terms.
-            elif term['type'] == 'CMC':
+            elif term[0]['type'] == 'CMC':
                 cmcs += term
             # Next, evaluate the Power terms.
-            elif term['type'] == 'Power':
+            elif term[0]['type'] == 'Power':
                 powers += term
             # Next, evaluate the Toughness terms.
-            elif term['type'] == 'Toughness':
+            elif term[0]['type'] == 'Toughness':
                 toughnesses += term
             # Next, evaluate the Artist terms.
-            elif term['type'] == 'Artist':
+            elif term[0]['type'] == 'Artist':
                 artists += term
             # Next, evaluate the Rarity terms.
-            elif term['type'] == 'Rarity':
+            elif term[0]['type'] == 'Rarity':
                 rarities += term
             # Next, evaluate the Set terms.
-            elif term['type'] == 'Set':
+            elif term[0]['type'] == 'Set':
                 sets += term
 
         # Once all the terms are set up in their own dicts, we process each type.
@@ -695,27 +705,44 @@ def search_cards():
             # With the updated artist search functionality, we're guarenteed to only have
             # a single artist per entry, which makes life much easier. 
             # Start by changing spaces into plus symbols.
-            q+="%28"
+            q+="+%28"
             for i, artist in enumerate(artists):
                 if ' ' in artist:
                     artist = artist.replace(' ', '+')
                 q+="+a%3A" + artist
-            q+="%29"               
-            
-            
-        elif term['type'] == 'Rarity':
-            q+="rarity%3A"
-            match term['value']:
-                case "Common":
-                    q+="c"
-                case "Uncommon":
-                    q+="u"
-                case "Rare":
-                    q+="r"
-                case "Mythic":
-                    q+="m"
-        elif term['type'] == 'Set':
-            q+="set%3A" + term['value']
+                if i < len(artists) - 1:
+                    q+= '%20or%20'
+            q+="%29"    
+
+
+        # Next, process rarities. These are always single values, so it's easy.
+        #print(rarities)
+        if rarities != []:
+            q+="+%28"
+            for i, rarity in enumerate(rarities):
+                q+="rarity%3A"
+                print(rarity)
+                match rarity['value']:
+                    case "Common":
+                        q+="c"
+                    case "Uncommon":
+                        q+="u"
+                    case "Rare":
+                        q+="r"
+                    case "Mythic":
+                        q+="m"
+                if i < len(rarities)-1:
+                    q+='%20or%20'
+            q+="%29"
+
+        # Finally, process the sets. Similar to artists, this will also always be single values.
+        if sets != []:
+            q+="+%28"
+            for i, setCode in enumerate(sets):
+                q+="set%3A"+setCode
+                if i < len(sets)-1:
+                    q+="%20or%20"
+            q+="%29"
     print(q)
     r = requests.get("https://api.scryfall.com/cards/random" + q, headers=headers)
     time.sleep(0.1)  # Scryfall asks for 50-100ms between requests
