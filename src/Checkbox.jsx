@@ -1,22 +1,13 @@
-const Checkbox = ({obj, index, onChange}) => {
-
-  const handleOnChange = (event) => {
-    event.preventDefault();
-    onChange(index, event);
-  }
-
-  return (
-    <>
-      <input 
-        type="checkbox"
-        id={'custom-checkbox-${obj.index}'}
-        name={obj.name}
-        value={obj.checked}
-        onChange={onChange}
-      />
+const Checkbox = ({ obj, index, onChange }) => (
+  <label className="color-checkbox">
+    <input
+      type="checkbox"
+      id={`custom-checkbox-${index}`}
+      name={obj.name}
+      onChange={onChange}
+    />
     {obj.name}
-    </>
-  )
-};
+  </label>
+);
 
 export default Checkbox;

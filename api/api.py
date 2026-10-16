@@ -510,6 +510,8 @@ def search_cards():
                 selected_colors.append('G')
 
     q="?q=is%3Acommander+legal%3Acommander+%28game%3Apaper%29"
+
+    # Add color identity to query
     if selected_colors != []:
         for term in searchTerms['searchTerms']:
             if term['type'] == 'ID Type':
@@ -522,20 +524,100 @@ def search_cards():
             q += "+id%3E" + ''.join(selected_colors)
         else:
             q += "+id%3D" + ''.join(selected_colors)
+
+    # Add main search terms to query
     if searchTerms != []:
-        for term in searchTerms['searchTerms']:
+        
+        # First, sort the search terms by type, so that we can process them in a specific order
+        sortedTerms = dict(sorted(searchTerms.items()))
+
+        # Loop through the sorted search terms and seperate them by type, so that we can process them in a specific order.
+        for term in sortedTerms['searchTerms']:
+
+            # First, evaluate the oracle text terms.
             if term['type'] == 'Oracle Text':
-                if ' ' in term['value']:
-                    effects = term['value'].split()
-                    for effect in effects:
-                        if '+' in effect:
-                            effect = effect.replace('+', '%2B')
-                        q+= "+o%3A" + effect
+                oracleTexts += term
+            # Next, evaluate the type line terms.
+            elif term['type'] == 'Type Line':
+                typeLines += term
+            # Next, evaluate the CMC terms.
+            elif term['type'] == 'CMC':
+                cmcs += term
+            # Next, evaluate the Power terms.
+            elif term['type'] == 'Power':
+                powers += term
+            # Next, evaluate the Toughness terms.
+            elif term['type'] == 'Toughness':
+                toughnesses += term
+            # Next, evaluate the Artist terms.
+            elif term['type'] == 'Artist':
+                artists += term
+            # Next, evaluate the Rarity terms.
+            elif term['type'] == 'Rarity':
+                rarities += term
+            # Next, evaluate the Set terms.
+            elif term['type'] == 'Set':
+                sets += term
+
+        # Once all the terms are set up in their own dicts, we process each type.
+        if oracleTexts != []:
+            # Start by adding the "(o:" to the query, which is the Scryfall syntax for searching oracle text with a grouping.
+            q+="+%28o%3A"
+            for entry in oracleTexts:
+                # For oracle texts, we want to group the individual entries, rather than break up each word.
+                effects = entry['value'].split()
+                countOfEffects = len(effects)
+                for i, effect in effects:
+                    if '+' in effect:
+                        effect = effect.replace('+', '%2B')
+                    q+= effect
+                    if i < countOfEffects - 1:
+                        q+= '%20or%20'
+            # Finish processing oracle text by adding the closing parenthesis to the query.
+            q+= "%29"
+
+        # Next, we process the type line terms.
+        if typeLines != []:
+            # Start by again adding the "(t:" to the query, which is the Scryfall syntax for searching type lines with a grouping.
+            q+="+%28t%3A"
+            for entry in typeLines:
+                # For type lines, it's simpler than oracle text, as we don't need to worry about plus symbols, but we do want to group any instance of "Time Lord"
+                # into one search term, rather than breaking it up into two separate terms.
+                if 'Time' or 'Lord' in entry['value']:
+                    entry['value'] = entry['value'].replace(' ', '%20')
+                # Then see if there's extra terms in the single entry. If so, split them up and group them together.
+                if ' ' in entry['value']:
+                    effects = entry['value'].split()
+                    countOfEffects = len(effects)
+                    for i, effect in effects:
+                        q+= effect
+                        if i < countOfEffects - 1:
+                            q+= '%20or%20'             
+            # Finish processing type lines by adding the closing parenthesis to the query.
+            q+= "%29"
+        # Next, we process the CMC terms.
+        if cmcs != []:
+            # While CMC is usually a single value, we cannot assume that, so we will process each CMC term individually, and group them together with an "or" operator.
+            # It will likely be easier to check if the CMC term is a single value, and if so, we can just add it to the query without grouping it.
+            if len(cmcs) == 1:
+                # Unfortunately, some users will put multiple terms into one instance of the search box, so we have to check if the CMC term is a single value or multiple values.
+                # If it's a single value, we can just add it to the query without grouping it.
+                if ' ' in cmcs[0]['value']:
+                    cmcs = cmcs[0]['value'].split()
+                    for i, cmc in enumerate(cmcs):
+                        if ' ' in cmc:
+                            cmc = cmc.replace(' ', '+')    
+                        q+= "+cmc%3A" + cmc
+                        if i < len(cmcs) - 1:
+                            q+= '%20or%20'
                 else:
-                    effects = term['value']
-                    if '+' in effects:
-                        effects = effects.replace('+', '%2B')
-                    q+= "+o%3A" + effects
+                    q+= "+cmc%3D" + cmcs[0]['value']
+            # Otherwise, we have to process each CMC term individually, and group them together with an "or" operator.
+            else:
+                q+="+%28cmc%3D"
+
+
+                
             elif term['type'] == 'Type Line':
                 if ' ' in term['value']:
                     effects = term['value'].split()
