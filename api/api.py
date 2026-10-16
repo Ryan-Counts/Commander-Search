@@ -707,9 +707,8 @@ def search_cards():
             # Start by changing spaces into plus symbols.
             q+="+%28"
             for i, artist in enumerate(artists):
-                if ' ' in artist:
-                    artist = artist.replace(' ', '+')
-                q+="+a%3A" + artist
+                print(artist)
+                q+="+a%3A%22" + artist['value'] + "%22"
                 if i < len(artists) - 1:
                     q+= '%20or%20'
             q+="%29"    
