@@ -58,6 +58,7 @@ const Form = ({colors, newCard, ColorList}) => {
     const [searchTerms, setSearchTerms] = useState([])
     const [searchType, setSearchType] = useState('')
     const [card, setCard] = useState(0);
+    const [error, setError] = useState('');
 
     const search = () => {
         const colorTerm = searchTerms.find((t) => t.type === 'Colors');
@@ -65,9 +66,10 @@ const Form = ({colors, newCard, ColorList}) => {
         const colorsForApi = colors.map((c) => ({ ...c, checked: selected.includes(c.name) }));
         const otherTerms = searchTerms.filter((t) => t.type !== 'Colors');
 
+        setError('');
         APIService.search({ colors: colorsForApi }, { searchTerms: otherTerms })
             .then((response) => newCard(response))
-            .catch((error) => console.log('error', error));
+            .catch((err) => setError(err.message));
     };
 
     const handleSearch=(event)=>{ 
@@ -218,6 +220,7 @@ const Form = ({colors, newCard, ColorList}) => {
                     </button>
                 </div>
                 <div></div>
+                {error && <p className="search-error" role="alert">{error}</p>}
                 <input type="submit" className="w3-button w3-blue" value="Search" />
             </form>
         </div>

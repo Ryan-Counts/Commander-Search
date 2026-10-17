@@ -38,9 +38,12 @@ function App() {
   const [prevCards, setPrevCards] = useState([]);
 
   useEffect(() => {
-    fetch('/api/getCard').then(res => res.json()).then(data => {
-      setCurrentCard(data);
-    });
+    fetch('/api/getCard')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.object !== 'error' && !data.error) setCurrentCard(data);
+      })
+      .catch(() => {});
   }, []);
 
   const newCard = (card) => {

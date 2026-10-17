@@ -1,17 +1,27 @@
-import React, { useState } from 'react';
-import './App.jsx';
+export default class APIService {
+    static search(colors, searchTerms) {
+        return fetch('/api/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ colors, searchTerms }),
+        })
+            .then(async (response) => {
+                const data = await response.json().catch(() => null);
 
-export default class APIService{
-    // Insert an article
-    static search(colors, searchTerms){
-        return fetch(`/api/search`,{
-            'method':'POST',
-             headers : {
-            'Content-Type':'application/json'
-      },
-      body:JSON.stringify({ colors, searchTerms })
-    })
-    .then(response => response.json())
-    .catch(error => console.log(error))
+                if (response.status === 404) {
+                    throw new Error('No cards matched that search. Try removing or changing a criterion.');
+                }
+                if (!response.ok || !data || data.object === 'error') {
+                    throw new Error('Something went wrong with the search. Please try again.');
+                }
+                return data;
+            })
+            .catch((err) => {
+                // fetch itself failed (offline, server down)
+                if (err instanceof TypeError) {
+                    throw new Error("Couldn't reach the server. Check your connection and try again.");
+                }
+                throw err;
+            });
     }
 }

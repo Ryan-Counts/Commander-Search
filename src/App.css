@@ -91,6 +91,11 @@
     gap: 10px;
 }
 
+.search-error {
+    color: #d3202a;
+    margin: 8px 0;
+}
+
 .search-term {
     display: flex;
     flex-wrap: wrap;

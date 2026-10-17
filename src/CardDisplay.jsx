@@ -1,15 +1,17 @@
-import React from 'react';
+const CardDisplay = ({ currentCard }) => {
+	if (!currentCard || (!currentCard.image_uris && !currentCard.card_faces)) return null;
 
-const CardDisplay = ({ currentCard }) => (
-	<div className="card-display">
-		{currentCard.card_faces ? (
-			currentCard.card_faces.map((face, index) => (
-				<img key={index} src={face.image_uris?.normal} alt={face.name} />
-			))
-		) : (
-			<img src={currentCard.image_uris?.normal} alt={currentCard.name} />
-		)}
-	</div>
-);
+	return (
+		<div className="card-display">
+			{currentCard.image_uris ? (
+				<img src={currentCard.image_uris.normal} alt={currentCard.name} />
+			) : (
+				currentCard.card_faces.map((face, index) => (
+					<img key={index} src={face.image_uris?.normal} alt={face.name} />
+				))
+			)}
+		</div>
+	);
+};
 
 export default CardDisplay;
