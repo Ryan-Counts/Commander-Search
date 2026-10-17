@@ -568,7 +568,7 @@ def search_cards():
     def get(term_type):
         return by_type.get(term_type, [])
 
-    q += or_group([f"o%3A{val(t['value'])}" for t in get('Oracle Text')])
+    q += ''.join(f"+o%3A{val(t['value'])}" for t in get('Oracle Text'))
     q += or_group([f"t%3A{val(w)}" for w in type_words(get('Type Line'))])
     q += or_group([f"cmc%3A{val(w)}" for w in words(get('CMC'))])
     q += or_group([f"pow%3A{val(w)}" for w in words(get('Power'))])
