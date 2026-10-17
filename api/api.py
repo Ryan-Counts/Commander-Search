@@ -3,6 +3,8 @@ import os
 import requests
 import json
 import time
+import re
+from urllib.parse import quote
 
 from flask import Flask, jsonify, send_from_directory, request
 
@@ -466,6 +468,38 @@ allSets = {
     'Legends': 'leg'
 }
 
+
+def val(text):
+    """URL-encode a value, wrapping it in quotes if it has spaces ("Time Lord")."""
+    encoded = quote(text, safe='')
+    return f"%22{encoded}%22" if ' ' in text else encoded
+
+
+def or_group(clauses):
+    """Join Scryfall clauses with OR, in parentheses when there are several."""
+    if not clauses:
+        return ""
+    if len(clauses) == 1:
+        return "+" + clauses[0]
+    return "+%28" + "%20or%20".join(clauses) + "%29"
+
+
+def words(terms):
+    """Every whitespace-separated value across a list of search terms."""
+    return [word for term in terms for word in term['value'].split()]
+
+
+def type_words(terms):
+    """Like words(), but keeps "Time Lord" together as a single phrase."""
+    out = []
+    for term in terms:
+        value = term['value']
+        if re.search(r'time lord', value, re.I):
+            out.append('Time Lord')
+            value = re.sub(r'time lord', '', value, flags=re.I)
+        out.extend(value.split())
+    return out
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
@@ -491,16 +525,7 @@ def search_cards():
     selected_colors = []
     colors = request.json['colors']
     searchTerms = request.json['searchTerms']
-    effects = []
     idType = ''
-    oracleTexts = []
-    typeLines = []
-    cmcs = []
-    powers = []
-    toughnesses = []
-    artists = []
-    rarities = []
-    sets = []
     print(searchTerms)
         
     for color in colors['colors']:
@@ -534,214 +559,32 @@ def search_cards():
             q += "+id%3D" + ''.join(selected_colors)
 
     # Add main search terms to query
-    if searchTerms['searchTerms']:
-        
-        # First, sort the search terms by type, so that we can process them in a specific order
-        #sortedTerms = dict(sorted(searchTerms.items()))
+    # Group the terms by type, e.g. {'CMC': [term, ...], 'Set': [term, ...]}
+    by_type = {}
+    for term in searchTerms['searchTerms']:
+        if term['value']:  # skip empty boxes
+            by_type.setdefault(term['type'], []).append(term)
 
-        #print(sortedTerms)
+    def get(term_type):
+        return by_type.get(term_type, [])
 
-        # Loop through the sorted search terms and seperate them by type, so that we can process them in a specific order.
-        for term in searchTerms.values():
-            #print(term)
-            # First, evaluate the oracle text terms.
-            if term[0]['type'] == 'Oracle Text':
-                oracleTexts += term
-            # Next, evaluate the type line terms.
-            elif term[0]['type'] == 'Type Line':
-                typeLines += term
-            # Next, evaluate the CMC terms.
-            elif term[0]['type'] == 'CMC':
-                cmcs += term
-            # Next, evaluate the Power terms.
-            elif term[0]['type'] == 'Power':
-                powers += term
-            # Next, evaluate the Toughness terms.
-            elif term[0]['type'] == 'Toughness':
-                toughnesses += term
-            # Next, evaluate the Artist terms.
-            elif term[0]['type'] == 'Artist':
-                artists += term
-            # Next, evaluate the Rarity terms.
-            elif term[0]['type'] == 'Rarity':
-                rarities += term
-            # Next, evaluate the Set terms.
-            elif term[0]['type'] == 'Set':
-                sets += term
+    q += or_group([f"o%3A{val(t['value'])}" for t in get('Oracle Text')])
+    q += or_group([f"t%3A{val(w)}" for w in type_words(get('Type Line'))])
+    q += or_group([f"cmc%3A{val(w)}" for w in words(get('CMC'))])
+    q += or_group([f"pow%3A{val(w)}" for w in words(get('Power'))])
+    q += or_group([f"tou%3A{val(w)}" for w in words(get('Toughness'))])
+    q += or_group([f"a%3A{val(t['value'])}" for t in get('Artist')])
 
-        # Once all the terms are set up in their own dicts, we process each type.
-        if oracleTexts != []:
-            # Start by adding the "(o:" to the query, which is the Scryfall syntax for searching oracle text with a grouping.
-            q+="+%28o%3A"
-            for entry in oracleTexts:
-                # For oracle texts, we want to group the individual entries, rather than break up each word.
-                effects = entry['value'].split()
-                countOfEffects = len(effects)
-                for i, effect in effects:
-                    if '+' in effect:
-                        effect = effect.replace('+', '%2B')
-                    q+= effect
-                    if i < countOfEffects - 1:
-                        q+= '%20or%20'
-            # Finish processing oracle text by adding the closing parenthesis to the query.
-            q+= "%29"
+    rarity_codes = {'Common': 'c', 'Uncommon': 'u', 'Rare': 'r', 'Mythic': 'm'}
+    q += or_group([f"rarity%3A{rarity_codes[t['value']]}"
+                for t in get('Rarity') if t['value'] in rarity_codes])
 
-        # Next, we process the type line terms.
-        if typeLines != []:
-            # Start by again adding the "(t:" to the query, which is the Scryfall syntax for searching type lines with a grouping.
-            q+="+%28t%3A"
-            for entry in typeLines:
-                # For type lines, it's simpler than oracle text, as we don't need to worry about plus symbols, but we do want to group any instance of "Time Lord"
-                # into one search term, rather than breaking it up into two separate terms.
-                if 'Time' or 'Lord' in entry['value']:
-                    entry['value'] = entry['value'].replace(' ', '%20')
-                # Then see if there's extra terms in the single entry. If so, split them up and group them together.
-                if ' ' in entry['value']:
-                    effects = entry['value'].split()
-                    countOfEffects = len(effects)
-                    for i, effect in effects:
-                        q+= effect
-                        if i < countOfEffects - 1:
-                            q+= '%20or%20'             
-            # Finish processing type lines by adding the closing parenthesis to the query.
-            q+= "%29"
-        # Next, we process the CMC terms.
-        if cmcs != []:
-            # While CMC is usually a single value, we cannot assume that, so we will process each CMC term individually, and group them together with an "or" operator.
-            # It will likely be easier to check if the CMC term is a single value, and if so, we can just add it to the query without grouping it.
-            if len(cmcs) == 1:
-                # Unfortunately, some users will put multiple terms into one instance of the search box, 
-                # so we have to check if the CMC term is a single value or multiple values.
-                # If it's a single value, we can just add it to the query without grouping it.
-                if ' ' in cmcs[0]['value']:
-                    cmcs = cmcs[0]['value'].split()
-                    for i, cmc in enumerate(cmcs):
-                        if ' ' in cmc:
-                            cmc = cmc.replace(' ', '+')    
-                        q+= "+cmc%3A" + cmc
-                        if i < len(cmcs) - 1:
-                            q+= '%20or%20'
-                else:
-                    q+= "+cmc%3D" + cmcs[0]['value']
-            # Otherwise, we have to process each CMC term individually, and group them together with an "or" operator, starting with a parenthesis.
-            else:
-                q+="+%28"
-                for cmc in cmcs:
-                    # Check if the user has entered multiple terms into one instance of the search box, 
-                    # and if so, split them up and group them together with an "or" operator.
-                    if ' ' in cmc['value']:
-                        cmc = cmc['value'].split()
-                        for i, cmc in enumerate(cmcs):
-                            if ' ' in cmc:
-                                cmc = cmc.replace(' ', '+')    
-                            q+= "+cmc%3A" + cmc
-                            if i < len(cmcs) - 1:
-                                q+= '%20or%20'
-                    # Otherwise, we can just add the CMC term to the query without grouping it.
-                    else:
-                        q+= "+cmc%3D" + cmc['value']
-                # Close the parenthesis for the CMC grouping.
-                q+= "%29"
-        # Next, we process the Power terms.
-        if powers != []:
-            # Power is like CMC, in that it is usually a single value, but we cannot assume that, so we will process each Power term individually, 
-            # and group them together with an "or" operator.
-            if len(powers) == 1:
-                if ' ' in powers[0]['value']:
-                    powers = powers[0]['value'].split()
-                    for i, power in enumerate(powers):
-                        if ' ' in power:
-                            power = power.replace(' ', '+')    
-                        q+= "+pow%3A" + power
-                        if i < len(powers) - 1:
-                            q+= '%20or%20'
-                else:
-                    q+= "+pow%3D" + powers[0]['value']
-            else:
-                q+="+%28"
-                for power in powers:
-                    if ' ' in power['value']:
-                        power = power['value'].split()
-                        for i, power in enumerate(powers):
-                            if ' ' in power:
-                                power = power.replace(' ', '+')    
-                            q+= "+pow%3A" + power
-                            if i < len(powers) - 1:
-                                q+= '%20or%20'
-                    else:
-                        q+= "+pow%3D" + power['value']
-                q+= "%29"
-        # Next, we process the Toughness terms.
-        if toughnesses != []:
-            # Toughness is almost identical to Power, in that it is usually a single value, but we cannot assume that, so we will process each Toughness term individually,
-            # and group them together with an "or" operator.
-            if len(toughnesses) == 1:
-                if ' ' in toughnesses[0]['value']:
-                    toughnesses = toughnesses[0]['value'].split()
-                    for i, toughness in enumerate(toughnesses):
-                        if ' ' in toughness:
-                            toughness = toughness.replace(' ', '+')    
-                        q+= "+tou%3A" + toughness
-                        if i < len(toughnesses) - 1:
-                            q+= '%20or%20'
-                else:
-                    q+= "+tou%3D" + toughnesses[0]['value']
-            else:
-                q+="+%28"
-                for toughness in toughnesses:
-                    if ' ' in toughness['value']:
-                        toughness = toughness['value'].split()
-                        for i, toughness in enumerate(toughnesses):
-                            if ' ' in toughness:
-                                toughness = toughness.replace(' ', '+')    
-                            q+= "+tou%3A" + toughness
-                            if i < len(toughnesses) - 1:
-                                q+= '%20or%20'
-                    else:
-                        q+= "+tou%3D" + toughness['value']
-                q+= "%29"
-        # Next, we process the Artist terms.
-        if artists != []:
-            # With the updated artist search functionality, we're guarenteed to only have
-            # a single artist per entry, which makes life much easier. 
-            # Start by changing spaces into plus symbols.
-            q+="+%28"
-            for i, artist in enumerate(artists):
-                print(artist)
-                q+="+a%3A%22" + artist['value'] + "%22"
-                if i < len(artists) - 1:
-                    q+= '%20or%20'
-            q+="%29"    
-
-
-        # Next, process rarities. These are always single values, so it's easy.
-        #print(rarities)
-        if rarities != []:
-            q+="+%28"
-            for i, rarity in enumerate(rarities):
-                q+="rarity%3A"
-                print(rarity)
-                match rarity['value']:
-                    case "Common":
-                        q+="c"
-                    case "Uncommon":
-                        q+="u"
-                    case "Rare":
-                        q+="r"
-                    case "Mythic":
-                        q+="m"
-                if i < len(rarities)-1:
-                    q+='%20or%20'
-            q+="%29"
-
-        # Finally, process the sets. Similar to artists, this will also always be single values.
-        if sets != []:
-            q+="+%28"
-            for i, setCode in enumerate(sets):
-                q+="set%3A"+setCode
-                if i < len(sets)-1:
-                    q+="%20or%20"
-            q+="%29"
+    q += or_group([f"set%3A{t['value']}" for t in get('Set')])
+    
+    
+    
+    
+    
     print(q)
     r = requests.get("https://api.scryfall.com/cards/random" + q, headers=headers)
     time.sleep(0.1)  # Scryfall asks for 50-100ms between requests
@@ -751,4 +594,4 @@ def search_cards():
         #return render_template('card.html', card=card_data)
         data = r.json()
         return jsonify(data)
-    return jsonify({'error': 'Failed to fetch card data'}), r.status_code
+    return jsonify(r.json()), r.status_code
