@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 
 .venc-wsl/
+api/getSets.py
+api/oldTermManagement.py
